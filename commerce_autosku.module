@@ -1,0 +1,122 @@
+<?php
+
+/**
+ * @file
+ * Allows hiding of entity label fields and automatic label creation.
+ */
+
+use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Config\Entity\ConfigEntityType;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_entity_type_alter().
+ *
+ * Adds the Auto Label tab to the entity configuration page.
+ */
+function commerce_autosku_entity_type_alter(array &$entity_types) {
+  $edit_link = $entity_types['commerce_product_variation_type']->getLinkTemplate('edit-form');
+  $autosku_link = Unicode::substr($edit_link, 0, -5);
+  $entity_types['commerce_product_variation_type']->setLinkTemplate('auto-sku', $autosku_link . "/auto-sku");
+}
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ */
+function commerce_autosku_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+  if ($entity_form['#entity_type'] == 'commerce_product_variation' && empty($form['#commerce_autosku_processed'])) {
+    $decorator = \Drupal::service('commerce_autosku.entity_decorator');
+    /** @var \Drupal\commerce_autosku\CommerceAutoSkuManager $entity */
+    $entity = $decorator->decorate($entity_form['#entity']);
+
+    if ($entity instanceof \Drupal\commerce_autosku\CommerceAutoSkuManagerInterface) {
+      if ($entity->hasAutoSku()) {
+        $sku = $entity->getSkuName();
+        $widget = &$entity_form[$sku]['widget'][0];
+        // Hide the label field. It will be automatically generated in
+        // hook_entity_presave().
+        $widget['value']['#type'] = 'hidden';
+        $widget['value']['#required'] = FALSE;
+        if (empty($widget['value']['#default_value'])) {
+          $widget['value']['#default_value'] = '%AutoSku%';
+        }
+      }
+      else {
+        if ($entity->hasOptionalAutoSku()) {
+          $label = $entity->getSkuName();
+          $widget = &$form[$label]['widget'][0];
+          // Allow label field to be empty. It will be automatically generated
+          // in hook_entity_presave().
+          $widget['value']['#required'] = FALSE;
+        }
+      }
+
+      $form['#commerce_autosku_processed'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_prepare_view().
+ */
+function commerce_autosku_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode) {
+  foreach ($entities as $entity) {
+    if ($entity->in_preview === TRUE && $entity instanceof ContentEntityInterface) {
+      $decorator = \Drupal::service('commerce_autosku.entity_decorator');
+      /** @var \Drupal\commerce_autosku\CommerceAutoSkuManager $decorated_entity */
+      $decorated_entity = $decorator->decorate($entity);
+
+      if ($decorated_entity->hasSku() && $decorated_entity->autoSkuNeeded()) {
+        $decorated_entity->setSku();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+  */
+function commerce_autosku_entity_presave(EntityInterface $entity) {
+  if ($entity instanceof ContentEntityInterface) {
+    $decorator = \Drupal::service('commerce_autosku.entity_decorator');
+    /** @var \Drupal\commerce_autosku\CommerceAutoSkuManager $decorated_entity */
+    $decorated_entity = $decorator->decorate($entity);
+    if ($decorated_entity->hasSku() && $decorated_entity->autoSkuNeeded()) {
+      $decorated_entity->setSku();
+    }
+  }
+}
+
+/**
+ * Implements hook_validation_constraint_alter().
+ *
+ * Override core NotNull constraint to allow entities that use Auto Entity
+ * Labels to validate when their label is empty before being set automatically.
+ */
+function commerce_autosku_validation_constraint_alter(array &$definitions) {
+  $definitions['NotNull']['class'] = 'Drupal\commerce_autosku\Plugin\Validation\CommerceSkuNotNullConstraint';
+}
+
+/**
+ * Implements hook_entity_operation().
+ */
+function commerce_autosku_entity_operation(EntityInterface $entity) {
+  $operations = array();
+  $entity_type = $entity->getEntityType();
+  $entity_type_id = $entity_type->id();
+  $entity_id = $entity->id();
+  if ($entity->hasLinkTemplate('auto-sku') &&
+    \Drupal::currentUser()->hasPermission('administer ' . $entity_type_id . ' SKU')) {
+
+    $operations['auto-sku'] = array(
+      'title' => t('Manage automatic SKU'),
+      'weight' => 100,
+      'url' => Url::fromRoute("entity.{$entity_type_id}.auto_sku", array($entity_type_id => $entity_id)),
+    );
+  }
+
+  return $operations;
+}

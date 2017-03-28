@@ -1,0 +1,17 @@
+services:
+  commerce_autosku.route_subscriber:
+    class: Drupal\commerce_autosku\Routing\RouteSubscriber
+    arguments: ['@entity.manager']
+    tags:
+      - { name: event_subscriber }
+  commerce_autosku.route_enhancer:
+    class: Drupal\commerce_autosku\Routing\RouteEnhancer
+    arguments: ['@entity.manager']
+    tags:
+      - { name: route_enhancer }
+  commerce_autosku.manager:
+    class: Drupal\commerce_autosku\CommerceAutoSkuManager
+    arguments: ['@entity.manager', '@config.factory', '@entity_type.manager', '@token']
+  commerce_autosku.entity_decorator:
+    class: Drupal\commerce_autosku\EntityDecorator
+    arguments: ['@config.factory', '@entity_type.manager', '@token']
