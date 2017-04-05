@@ -1,2 +1,2 @@
 permission_callbacks:
-  - Drupal\commerce_autosku\CommerceAutoSkuPermissionController::autoEntitySkuPermissions
+  - Drupal\commerce_autosku\CommerceAutoSkuPermissionController::autoSkuPermissions

@@ -49,7 +49,7 @@ class CommerceAutoSkuPermissionController implements ContainerInjectionInterface
    *
    * @return array
    */
-  public function autoEntityLabelPermissions() {
+  public function autoSkuPermissions() {
     $permissions = [];
 
     foreach ($this->entityManager->getDefinitions() as $entity_type_id => $entity_type) {
