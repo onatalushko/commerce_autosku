@@ -6,6 +6,7 @@
 
 namespace Drupal\commerce_autosku;
 
+use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -232,32 +233,57 @@ class CommerceAutoSkuManager implements CommerceAutoSkuManagerInterface {
   }
 
   /**
-   * Generates the label according to the settings.
+   * Generates the SKU according to the settings.
    *
    * @param string $pattern
    *   Label pattern. May contain tokens.
-   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   * @param ProductVariationInterface $entity
    *   Content entity.
    *
    * @return string
    *   A label string
    */
-  protected function generateSku($pattern, $entity) {
+  protected function generateSku($pattern, ProductVariationInterface $entity) {
     $entity_type = $entity->getEntityType()->id();
-    $output = $this->token
+
+    $generated_sku = $this->token
       ->replace($pattern, array($entity_type => $entity), array(
         'sanitize' => FALSE,
         'clear' => TRUE
       ));
 
-    // Evaluate PHP.
-    if ($this->getConfig('php')) {
-      $output = $this->evalLabel($output, $this->entity);
-    }
+
     // Strip tags.
-    $output = preg_replace('/[\t\n\r\0\x0B]/', '', strip_tags($output));
+    $generated_sku = preg_replace('/[\t\n\r\0\x0B]/', '', strip_tags($generated_sku));
+    $output = $generated_sku;
+
+    $i = 0;
+    while (!$this->isSkuUnique($entity, $output)) {
+      $output = $generated_sku . $i;
+      $i++;
+    };
 
     return $output;
+  }
+
+  /**
+   * Validate if sku is unique.
+   *
+   * @param ProductVariationInterface $entity
+   *   Product Variation.
+   * @param string $sku
+   *   SKU.
+   *
+   * @return bool
+   *   TRUE if SKU unique FALSE otherwise.
+   */
+  protected function isSkuUnique(ProductVariationInterface $entity, $sku) {
+    $entities = $this->entityTypeManager->getStorage($this->entity_type)->loadByProperties(['sku' => $sku]);
+    if (!$entity->isNew()) {
+      unset($entities[$entity->id()]);
+    }
+
+    return empty($entities);
   }
 
   /**
@@ -296,26 +322,6 @@ class CommerceAutoSkuManager implements CommerceAutoSkuManagerInterface {
     }
 
     return $label;
-  }
-
-  /**
-   * Evaluates php code and passes the entity to it.
-   *
-   * @param $code
-   *   PHP code to evaluate.
-   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   Content entity to pa ss through to the PHP script.
-   *
-   * @return string
-   *   String to use as label.
-   */
-  protected function evalLabel($code, $entity) {
-    ob_start();
-    print eval('?>' . $code);
-    $output = ob_get_contents();
-    ob_end_clean();
-
-    return $output;
   }
 
   /**
