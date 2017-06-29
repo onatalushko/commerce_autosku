@@ -254,6 +254,11 @@ class CommerceAutoSkuManager implements CommerceAutoSkuManagerInterface {
       ));
 
 
+    // Evaluate PHP.
+    if ($this->getConfig('php')) {
+      $generated_sku = $this->evalSku($generated_sku, $this->entity);
+    }
+
     // Strip tags.
     $generated_sku = preg_replace('/[\t\n\r\0\x0B]/', '', strip_tags($generated_sku));
     $output = $generated_sku;
@@ -327,6 +332,26 @@ class CommerceAutoSkuManager implements CommerceAutoSkuManagerInterface {
     }
 
     return $label;
+  }
+
+  /**
+   * Evaluates php code and passes the entity to it.
+   *
+   * @param $code
+   *   PHP code to evaluate.
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   Content entity to pass through to the PHP script.
+   *
+   * @return string
+   *   String to use as SKU.
+   */
+  protected function evalSku($code, $entity) {
+    ob_start();
+    print eval('?>' . $code);
+    $output = ob_get_contents();
+    ob_end_clean();
+
+    return $output;
   }
 
   /**
