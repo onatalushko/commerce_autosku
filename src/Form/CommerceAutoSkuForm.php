@@ -70,7 +70,7 @@ class CommerceAutoSkuForm extends ConfigFormBase {
    */
   protected function getEditableConfigNames() {
     return [
-      'commerce_autosku.settings',
+      'commerce_autosku.entity_type.' . $this->entity_type_parameter . '_' . $this->entity_type_id,
     ];
   }
 
@@ -100,7 +100,7 @@ class CommerceAutoSkuForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $key = $this->entity_type_parameter . '_' . $this->entity_type_id;
-    $config = $this->config('commerce_autosku.settings');
+    $config = $this->config('commerce_autosku.entity_type.' . $key);
 
     /*
      * @todo
@@ -117,19 +117,20 @@ class CommerceAutoSkuForm extends ConfigFormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Automatic SKU generation for @type', ['@type' => $this->entity_type_id]),
       '#weight' => 0,
+      '#tree' => TRUE,
     ];
 
-    $form['commerce_autosku'][$key . '_status'] = [
+    $form['commerce_autosku']['status'] = [
       '#type' => 'radios',
-      '#default_value' => $config->get($key . '_status'),
+      '#default_value' => $config->get('status'),
       '#options' => $options,
     ];
 
-    $form['commerce_autosku'][$key . '_pattern'] = [
+    $form['commerce_autosku']['pattern'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Pattern for the SKU'),
       '#description' => $this->t('Leave blank for using the per default generated SKU. Otherwise this string will be used as SKU. Use the syntax [token] if you want to insert a replacement pattern.'),
-      '#default_value' => $config->get($key . '_pattern'),
+      '#default_value' => $config->get('pattern'),
     ];
 
     // Display the list of available placeholders if token module is installed.
@@ -147,13 +148,13 @@ class CommerceAutoSkuForm extends ConfigFormBase {
     return parent::buildForm($form, $form_state);
   }
 
-
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $config = $this->configFactory->getEditable('commerce_autosku.settings');
-    foreach ($form_state->getValues() as $key => $value) {
+    $entity_type_key = $this->entity_type_parameter . '_' . $this->entity_type_id;
+    $config = $this->configFactory->getEditable('commerce_autosku.entity_type.' . $entity_type_key);
+    foreach ($form_state->getValue('commerce_autosku') as $key => $value) {
       $config->set($key, $value);
     }
     $config->save();

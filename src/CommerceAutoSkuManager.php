@@ -301,10 +301,10 @@ class CommerceAutoSkuManager implements CommerceAutoSkuManagerInterface {
    */
   protected function getConfig($value) {
     if (!isset($this->config)) {
-      $this->config = $this->configFactory->get('commerce_autosku.settings');
+      $this->config = $this->configFactory->get('commerce_autosku.entity_type');
     }
     $key = $this->bundle_entity_type . '_' . $this->entity_bundle;
-    return $this->config->get($key . '_' . $value);
+    return $this->config->get($key . '.' . $value);
   }
 
   /**
