@@ -154,10 +154,11 @@ class CommerceAutoSkuForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $entity_type_key = $this->entity_type_parameter . '_' . $this->entity_type_id;
     $config = $this->configFactory->getEditable('commerce_autosku.entity_type.' . $entity_type_key);
-    foreach ($form_state->getValue('commerce_autosku') as $key => $value) {
-      $config->set($key, $value);
-    }
-    $config->save();
+    $values =  $form_state->getValue('commerce_autosku');
+    $config
+      ->set('status', (int) $values['status'])
+      ->set('pattern', $values['pattern'])
+      ->save();
     parent::submitForm($form, $form_state);
   }
 }
