@@ -133,6 +133,13 @@ class CommerceAutoSkuForm extends ConfigFormBase {
       '#default_value' => $config->get('pattern'),
     ];
 
+    // Don't allow editing of the pattern if PHP is used, but the users lacks
+    // permission for PHP.
+    if ($config->get('php') && !\Drupal::currentUser()->hasPermission('use PHP for auto SKUs')) {
+      $form['commerce_autosku']['pattern']['#disabled'] = TRUE;
+      $form['commerce_autosku']['pattern']['#description'] = $this->t('You are not allowed the configure the pattern for the SKU, because you do not have the %permission permission.', ['%permission' => $this->t('Use PHP for auto SKUs')]);
+    }
+
     // Display the list of available placeholders if token module is installed.
     $module_handler = \Drupal::moduleHandler();
     if ($module_handler->moduleExists('token')) {
@@ -144,6 +151,14 @@ class CommerceAutoSkuForm extends ConfigFormBase {
         '#dialog' => TRUE,
       ];
     }
+
+    $form['commerce_autosku']['php'] = [
+      '#access' => \Drupal::currentUser()->hasPermission('use PHP for auto entity labels'),
+      '#type' => 'checkbox',
+      '#title' => $this->t('Evaluate PHP in pattern.'),
+      '#description' => $this->t('Put PHP code above that returns your string, but make sure you surround code in <code>&lt;?php</code> and <code>?&gt;</code>. Note that <code>$entity</code> and <code>$language</code> are available and can be used by your code.'),
+      '#default_value' => $config->get('php'),
+    ];
 
     return parent::buildForm($form, $form_state);
   }

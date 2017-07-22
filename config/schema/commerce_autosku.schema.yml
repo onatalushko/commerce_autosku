@@ -8,3 +8,6 @@ commerce_autosku.entity_type.*:
     pattern:
       type: string
       label: 'SKU replacement pattern'
+    php:
+      type: boolean
+      label: 'True if PHP is enabled for replacement'
