@@ -1,0 +1,10 @@
+commerce_autosku.entity_type.*:
+  type: config_entity
+  label: 'AutoSKU settings'
+  mapping:
+    status:
+      type: integer
+      label: 'Status - 0: Disabled, 1: Enabled, 2: Optional'
+    pattern:
+      type: string
+      label: 'SKU replacement pattern'
