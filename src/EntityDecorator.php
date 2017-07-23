@@ -25,13 +25,6 @@ class EntityDecorator implements EntityDecoratorInterface {
   protected $entity;
 
   /**
-   * Config factory.
-   *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface
-   */
-  protected $configFactory;
-
-  /**
    * The entity type manager.
    *
    * @var \Drupal\Core\Entity\EntityTypeManager
@@ -41,16 +34,9 @@ class EntityDecorator implements EntityDecoratorInterface {
   /**
    * Token service.
    *
-   * @var \Drupal\Core\Utility\Token
+   * @var CommerceAutoSkuGeneratorManagerInterface
    */
-  protected $token;
-
-  /**
-   * Automatic label configuration for the entity.
-   *
-   * @var array
-   */
-  protected $config;
+  protected $generatorManager;
 
   /**
    * Constructs an EntityDecorator object.
@@ -62,17 +48,16 @@ class EntityDecorator implements EntityDecoratorInterface {
    * @param \Drupal\Core\Utility\Token $token
    *   Token manager.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, Token $token) {
-    $this->configFactory = $config_factory;
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, CommerceAutoSkuGeneratorManagerInterface $generatorManager) {
     $this->entityTypeManager = $entity_type_manager;
-    $this->token = $token;
+    $this->generatorManager = $generatorManager;
   }
 
   /**
    * {@inheritdoc}
    */
   public function decorate(ContentEntityInterface $entity) {
-    $this->entity = new CommerceAutoSkuManager($entity, $this->configFactory, $this->entityTypeManager, $this->token);
+    $this->entity = new CommerceAutoSkuManager($entity, $this->entityTypeManager, $this->generatorManager);
     return $this->entity;
   }
 }

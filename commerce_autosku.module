@@ -5,6 +5,10 @@
  * Allows hiding of entity label fields and automatic label creation.
  */
 
+use Drupal\commerce_autosku\CommerceAutoSkuManager;
+use Drupal\commerce_product\Entity\ProductVariationType;
+use Drupal\commerce_product\Entity\ProductVariationTypeInterface;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\EntityInterface;
@@ -18,9 +22,7 @@ use Drupal\Core\Url;
  * Adds the Auto Label tab to the entity configuration page.
  */
 function commerce_autosku_entity_type_alter(array &$entity_types) {
-  $edit_link = $entity_types['commerce_product_variation_type']->getLinkTemplate('edit-form');
-  $autosku_link = Unicode::substr($edit_link, 0, -5);
-  $entity_types['commerce_product_variation_type']->setLinkTemplate('auto-sku', $autosku_link . "/auto-sku");
+  $entity_types['commerce_product_variation_type']->setLinkTemplate('auto-sku', '/admin/commerce/config/product-variation-types/{commerce_product_variation_type}/auto-sku');
 }
 
 /**
@@ -46,8 +48,8 @@ function commerce_autosku_inline_entity_form_entity_form_alter(&$entity_form, &$
       }
       else {
         if ($entity->hasOptionalAutoSku()) {
-          $label = $entity->getSkuName();
-          $widget = &$form[$label]['widget'][0];
+          $sku_property = $entity->getSkuName();
+          $widget = &$entity_form[$sku_property]['widget'][0];
           // Allow label field to be empty. It will be automatically generated
           // in hook_entity_presave().
           $widget['value']['#required'] = FALSE;

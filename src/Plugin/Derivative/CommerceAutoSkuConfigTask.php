@@ -42,21 +42,15 @@ class CommerceAutoSkuConfigTask extends DeriverBase implements ContainerDeriverI
     $this->derivatives = array();
 
     foreach ($this->entityManager->getDefinitions() as $entity_type_id => $entity_type) {
-       // Special handling of Taxonomy. See https://www.drupal.org/node/2822546
-       if ($entity_type_id == "taxonomy_vocabulary") {
-         $base_route = "entity.{$entity_type_id}.overview_form";
+       if (!$entity_type->hasLinkTemplate('auto-sku')) {
+         continue;
        }
-       else {
-         $base_route = "entity.{$entity_type_id}.edit_form";
-       }
-       if ($entity_type->hasLinkTemplate('auto-sku')) {
-        $this->derivatives["$entity_type_id.auto_sku_tab"] = array(
-          'route_name' => "entity.{$entity_type_id}.auto_sku",
-          'title' => 'Automatic sku',
-          'base_route' => $base_route,
-          'weight' => 100,
-        );
-      }
+      $this->derivatives["$entity_type_id.auto_sku_tab"] = array(
+        'route_name' => "entity.{$entity_type_id}.auto_sku",
+        'title' => 'Automatic SKU',
+        'base_route' => "entity.{$entity_type_id}.edit_form",
+        'weight' => 100,
+      );
     }
 
     foreach ($this->derivatives as &$entry) {

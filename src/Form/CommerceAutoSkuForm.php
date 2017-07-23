@@ -7,12 +7,12 @@
 
 namespace Drupal\commerce_autosku\Form;
 
+use Drupal\commerce_autosku\CommerceAutoSkuGeneratorManager;
 use Drupal\commerce_autosku\CommerceAutoSkuManager;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Form\ConfigFormBase;
+use Drupal\commerce_product\Entity\ProductVariationTypeInterface;
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -25,53 +25,31 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @property \Drupal\commerce_autosku\CommerceAutoSkuManager auto_entity_label_manager
  * @package Drupal\commerce_autosku\Controller
  */
-class CommerceAutoSkuForm extends ConfigFormBase {
+class CommerceAutoSkuForm extends FormBase {
+
   /**
-   * The config factory.
+   * The commerce autoSku generator plugin manager.
    *
-   * Subclasses should use the self::config() method, which may be overridden to
-   * address specific needs when loading config, rather than this property
-   * directly. See \Drupal\Core\Form\ConfigFormBase::config() for an example of
-   * this.
-   *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   * @var \Drupal\commerce_payment\PaymentGatewayManager
    */
-  protected $configFactory;
+  protected $pluginManager;
 
-  protected $entitymanager;
-
-  protected $route_match;
+  /**
+   * The commerce autoSku generator plugin manager.
+   *
+   * @var ProductVariationTypeInterface
+   */
+  protected $entity;
 
   /**
    * AutoEntityLabelController constructor.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_manager
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
+   * @param \Drupal\commerce_autosku\CommerceAutoSkuManager $plugin_manager
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_manager, RouteMatchInterface $route_match) {
-    parent::__construct($config_factory);
-    $this->entitymanager = $entity_manager;
-    $this->route_match = $route_match;
-    $route_options = $this->route_match->getRouteObject()->getOptions();
-    $array_keys = array_keys($route_options['parameters']);
-    $this->entity_type_parameter = array_shift($array_keys);
-    $entity_type = $this->route_match->getParameter($this->entity_type_parameter);
-    $this->entity_type_id = $entity_type->id();
-    $this->entity_type_provider =  $entity_type->getEntityType()->getProvider();
-  }
-
-
-  /**
-   * Gets the configuration names that will be editable.
-   *
-   * @return array
-   *   An array of configuration object names that are editable if called in
-   *   conjunction with the trait's config() method.
-   */
-  protected function getEditableConfigNames() {
-    return [
-      'commerce_autosku.entity_type.' . $this->entity_type_parameter . '_' . $this->entity_type_id,
-    ];
+  public function __construct(ContainerInterface $container, CommerceAutoSkuGeneratorManager $plugin_manager) {
+    $this->pluginManager = $plugin_manager;
   }
 
   /**
@@ -89,76 +67,87 @@ class CommerceAutoSkuForm extends ConfigFormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static (
-      $container->get('config.factory'),
-      $container->get('entity.manager'),
-      $container->get('current_route_match')
+      $container,
+      $container->get('plugin.manager.commerce_autosku_generator')
     );
   }
 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
-    $key = $this->entity_type_parameter . '_' . $this->entity_type_id;
-    $config = $this->config('commerce_autosku.entity_type.' . $key);
-
-    /*
-     * @todo
-     *  Find a generic way of determining if the label is rendered on the
-     *  entity form. If not, don't show 'commerce_autosku_optional' option.
-     */
-    $options = [
-      CommerceAutoSkuManager::DISABLED => $this->t('Disabled'),
-      CommerceAutoSkuManager::ENABLED => $this->t('Automatically generate the SKU and hide the label field'),
-      CommerceAutoSkuManager::OPTIONAL => $this->t('Automatically generate the SKU if the SKU field is left empty'),
-    ];
-
-    $form['commerce_autosku'] = [
-      '#type' => 'fieldset',
-      '#title' => $this->t('Automatic SKU generation for @type', ['@type' => $this->entity_type_id]),
-      '#weight' => 0,
-      '#tree' => TRUE,
-    ];
-
-    $form['commerce_autosku']['status'] = [
+  public function buildForm(array $form, FormStateInterface $form_state, $commerce_product_variation_type = NULL) {
+    /** @var ProductVariationTypeInterface entity */
+    $this->entity = $commerce_product_variation_type;
+    $configuration = $this->entity->getThirdPartySettings('commerce_autosku');
+    $form['mode'] = [
       '#type' => 'radios',
-      '#default_value' => $config->get('status'),
-      '#options' => $options,
+      '#default_value' => isset($configuration['mode']) ? $configuration['mode'] : CommerceAutoSkuManager::DISABLED,
+      '#options' => CommerceAutoSkuManager::commerce_autosku_options(),
     ];
 
-    $form['commerce_autosku']['pattern'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Pattern for the SKU'),
-      '#description' => $this->t('Leave blank for using the per default generated SKU. Otherwise this string will be used as SKU. Use the syntax [token] if you want to insert a replacement pattern.'),
-      '#default_value' => $config->get('pattern'),
+    $plugins = array_column($this->pluginManager->getDefinitions(), 'label', 'id');
+    asort($plugins);
+//    $plugin = $this->getget('');
+//
+//    // Use the first available plugin as the default value.
+//    if (!$gateway->getPluginId()) {
+//      $plugin_ids = array_keys($plugins);
+//      $plugin = reset($plugin_ids);
+//      $gateway->setPluginId($plugin);
+//    }
+    // The form state will have a plugin value if #ajax was used.
+//    $plugin = $form_state->getValue('plugin', $gateway->getPluginId());
+    // Pass the plugin configuration only if the plugin hasn't been changed via #ajax.
+
+    $form['actions']['#type'] = 'actions';
+    $form['actions']['submit'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Save configuration'),
+      '#button_type' => 'primary',
     ];
 
-    // Display the list of available placeholders if token module is installed.
-    $module_handler = \Drupal::moduleHandler();
-    if ($module_handler->moduleExists('token')) {
-      $token_info = $module_handler->invoke($this->entity_type_provider, 'token_info');
-      $token_types = isset($token_info['types']) ? array_keys($token_info['types']) : [];
-      $form['commerce_autosku']['token_help'] = [
-        '#theme' => 'token_tree_link',
-        '#token_types' => $token_types,
-        '#dialog' => TRUE,
-      ];
+    // By default, render the form using system-config-form.html.twig.
+    $form['#theme'] = 'system_config_form';
+
+    if (!isset($plugins[$configuration['plugin']])) {
+      return $form;
     }
 
-    return parent::buildForm($form, $form_state);
+    $wrapper_id = Html::getUniqueId('commerce-autosku-plugin-form');
+
+    $form['plugin'] = [
+      '#type' => 'radios',
+      '#title' => t('Plugin'),
+      '#options' => $plugins,
+      '#default_value' => $configuration['plugin'],
+      '#required' => TRUE,
+      '#ajax' => [
+        'callback' => '::ajaxRefresh',
+        'wrapper' => $wrapper_id,
+      ],
+    ];
+    $form['configuration'] = [
+      '#type' => 'commerce_plugin_configuration',
+      '#plugin_type' => 'commerce_autosku_generator',
+      '#plugin_id' => $configuration['plugin'],
+      '#default_value' => $configuration['configuration'],
+    ];
+
+
+    return $form;
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $entity_type_key = $this->entity_type_parameter . '_' . $this->entity_type_id;
-    $config = $this->configFactory->getEditable('commerce_autosku.entity_type.' . $entity_type_key);
-    $values =  $form_state->getValue('commerce_autosku');
-    $config
-      ->set('status', (int) $values['status'])
-      ->set('pattern', $values['pattern'])
-      ->save();
-    parent::submitForm($form, $form_state);
+    $mode = $form_state->getValue('mode');
+    $plugin = $form_state->getValue('plugin');
+    $configuration = $form_state->getValue('configuration');
+    $this->entity->setThirdPartySetting('commerce_autosku', 'mode', $mode);
+    $this->entity->setThirdPartySetting('commerce_autosku', 'plugin', $plugin);
+    $this->entity->setThirdPartySetting('commerce_autosku', 'configuration', $configuration);
+    $this->entity->save();
   }
+
 }

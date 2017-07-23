@@ -1,10 +1,20 @@
-commerce_autosku.entity_type.*:
-  type: config_entity
+commerce_product_variation.commerce_product_variation_type.*.third_party.commerce_autosku:
+  type: mapping
   label: 'AutoSKU settings'
   mapping:
-    status:
-      type: integer
-      label: 'Status - 0: Disabled, 1: Enabled, 2: Optional'
+    mode:
+      type: string
+      label: 'Status'
+    plugin:
+      type: string
+      label: 'Plugin'
+    configuration:
+      type: commerce_autosku.commerce_autosku_generator.plugin.[%parent.plugin]
+
+commerce_autosku.commerce_autosku_generator.plugin.token:
+  type: mapping
+  mapping:
     pattern:
       type: string
       label: 'SKU replacement pattern'
+

@@ -29,21 +29,21 @@ class RouteSubscriber extends RouteSubscriberBase {
   /**
    * Constructs a new RouteSubscriber object.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_manager) {
-    $this->entityTypeManager = $entity_manager;
+  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
    * {@inheritdoc}
    */
   protected function alterRoutes(RouteCollection $collection) {
-    foreach ($this->entityTypeManager->getDefinitions() as $entity_type_id => $entity_type) {
-      if ($route = $this->getEntityLabelRoute($entity_type)) {
-        $collection->add("entity.$entity_type_id.auto_sku", $route);
-      }
+    $entity_type_id = 'commerce_product_variation_type';
+    $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+    if ($route = $this->getEntityAutoSkuRoute($entity_type)) {
+      $collection->add("entity.$entity_type_id.auto_sku", $route);
     }
   }
 
@@ -56,7 +56,7 @@ class RouteSubscriber extends RouteSubscriberBase {
    * @return \Symfony\Component\Routing\Route|null
    *   The generated route, if available.
    */
-  protected function getEntityLabelRoute(EntityTypeInterface $entity_type) {
+  protected function getEntityAutoSkuRoute(EntityTypeInterface $entity_type) {
     if ($route_load = $entity_type->getLinkTemplate('auto-sku')) {
       $entity_type_id = $entity_type->id();
       $route = new Route($route_load);
