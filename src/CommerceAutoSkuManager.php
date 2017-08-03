@@ -7,16 +7,12 @@
 namespace Drupal\commerce_autosku;
 
 use Drupal\commerce_autosku\Plugin\CommerceAutoSkuGenerator\CommerceAutoSkuGeneratorInterface;
-use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\commerce_product\Entity\ProductVariationTypeInterface;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Utility\Token;
 
 class CommerceAutoSkuManager implements CommerceAutoSkuManagerInterface {
   use StringTranslationTrait;

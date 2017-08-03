@@ -3,19 +3,12 @@
 namespace Drupal\commerce_autosku\Plugin\CommerceAutoSkuGenerator;
 
 use Drupal\commerce_product\Entity\ProductVariationInterface;
-use Drupal\Component\Plugin\ConfigurablePluginInterface;
-use Drupal\Component\Plugin\DerivativeInspectionInterface;
 use Drupal\Component\Plugin\PluginBase;
-use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Form\BaseFormIdInterface;
-use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Plugin\PluginFormInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Places an order through a series of steps.

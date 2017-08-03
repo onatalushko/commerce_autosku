@@ -5,14 +5,7 @@
  * Allows hiding of entity label fields and automatic label creation.
  */
 
-use Drupal\commerce_autosku\CommerceAutoSkuManager;
-use Drupal\commerce_product\Entity\ProductVariationType;
-use Drupal\commerce_product\Entity\ProductVariationTypeInterface;
-use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\Unicode;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Config\Entity\ConfigEntityType;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Url;
 
