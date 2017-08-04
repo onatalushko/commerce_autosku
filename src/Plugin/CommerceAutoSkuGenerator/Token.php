@@ -109,7 +109,7 @@ class Token extends CommerceAutoSkuGeneratorBase {
     $values = $form_state->getValue($form['#parents']);
     $tokens = $this->token->scan($values['pattern']);
     if (empty($tokens) && !empty($values['pattern'])) {
-      $form_state->setError($form['pattern'], 'error');
+      $form_state->setError($form['pattern'], 'At least one token from available tokens list required');
     }
   }
 

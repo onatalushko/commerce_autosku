@@ -84,8 +84,8 @@ class CommerceAutoSkuForm extends FormBase {
       '#default_value' => isset($configuration['mode']) ? $configuration['mode'] : CommerceAutoSkuManager::DISABLED,
       '#options' => CommerceAutoSkuManager::commerce_autosku_options(),
     ];
-
-    $plugins = array_column($this->pluginManager->getDefinitions(), 'label', 'id');
+    $definition = $this->pluginManager->getDefinitions();
+    $plugins = array_column($definition, 'label', 'id');
     asort($plugins);
 //    $plugin = $this->getget('');
 //
@@ -96,7 +96,7 @@ class CommerceAutoSkuForm extends FormBase {
 //      $gateway->setPluginId($plugin);
 //    }
     // The form state will have a plugin value if #ajax was used.
-//    $plugin = $form_state->getValue('plugin', $gateway->getPluginId());
+//    $plugin = $form_state->getValue('plugin');
     // Pass the plugin configuration only if the plugin hasn't been changed via #ajax.
 
     $form['actions']['#type'] = 'actions';
@@ -109,7 +109,7 @@ class CommerceAutoSkuForm extends FormBase {
     // By default, render the form using system-config-form.html.twig.
     $form['#theme'] = 'system_config_form';
 
-    if (!isset($plugins[$configuration['plugin']])) {
+    if (!is_null($configuration['plugin']) && !isset($plugins[$configuration['plugin']])) {
       return $form;
     }
 
@@ -119,20 +119,23 @@ class CommerceAutoSkuForm extends FormBase {
       '#type' => 'radios',
       '#title' => t('Plugin'),
       '#options' => $plugins,
-      '#default_value' => $configuration['plugin'],
       '#required' => TRUE,
       '#ajax' => [
         'callback' => '::ajaxRefresh',
         'wrapper' => $wrapper_id,
       ],
     ];
-    $form['configuration'] = [
-      '#type' => 'commerce_plugin_configuration',
-      '#plugin_type' => 'commerce_autosku_generator',
-      '#plugin_id' => $configuration['plugin'],
-      '#default_value' => $configuration['configuration'],
-    ];
-
+    if (!is_null($configuration['plugin']) && isset($plugins[$configuration['plugin']])) {
+      $form['plugin']['#default_value'] = $configuration['plugin'];
+      $form['configuration'] = [
+        '#type' => 'commerce_plugin_configuration',
+        '#plugin_type' => 'commerce_autosku_generator',
+        '#plugin_id' => $configuration['plugin'],
+      ];
+      if (!is_null($configuration['configuration'])) {
+        $form['configuration']['#default_value'] = $configuration['configuration'];
+      }
+    }
 
     return $form;
   }
