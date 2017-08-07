@@ -58,6 +58,10 @@ function commerce_autosku_inline_entity_form_entity_form_alter(&$entity_form, &$
  * Implements hook_entity_prepare_view().
  */
 function commerce_autosku_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode) {
+  if ($entity_type_id != 'commerce_product_variation') {
+    return;
+  }
+
   foreach ($entities as $entity) {
     if ($entity->in_preview === TRUE && $entity instanceof ContentEntityInterface) {
       $decorator = \Drupal::service('commerce_autosku.entity_decorator');
@@ -72,9 +76,9 @@ function commerce_autosku_entity_prepare_view($entity_type_id, array $entities, 
 }
 
 /**
- * Implements hook_entity_presave().
-  */
-function commerce_autosku_entity_presave(EntityInterface $entity) {
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function commerce_autosku_commerce_product_variation_presave(EntityInterface $entity) {
   if ($entity instanceof ContentEntityInterface) {
     $decorator = \Drupal::service('commerce_autosku.entity_decorator');
     /** @var \Drupal\commerce_autosku\CommerceAutoSkuManager $decorated_entity */
